@@ -7,10 +7,8 @@
     <meta name="mobile-web-app-capable" content="yes">
     <title>NFC Console Master</title>
     <style>
-        /* Correção do Viewport: Removido o 100vh falho */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; overflow: hidden; font-family: monospace; touch-action: none; }
         
-        /* Ancoramento Absoluto: Força o jogo a caber exatamente no espaço que sobrou da tela */
         #game-container { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; }
         
         #tap-screen { 
@@ -24,24 +22,50 @@
         
         #error-msg { color: #ff4444; padding: 20px; text-align: center; }
 
-        /* Estilo do Botão de Resgate de UX */
         #rescue-btn {
             display: none; position: absolute; top: 15px; right: 15px; z-index: 9999;
             background: rgba(229, 37, 33, 0.8); color: white; border: 1px solid #fff; 
             padding: 10px 15px; border-radius: 8px; font-weight: bold; font-family: monospace; cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.5); backdrop-filter: blur(5px);
         }
+
+        /* --- NOVO: Estilo do Selo de Autoria --- */
+        .creator-badge {
+            position: absolute;
+            bottom: 40px; /* Mantém colado na parte inferior */
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #888; /* Cinza sutil para não ofuscar o letreiro principal */
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .creator-badge img {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%; /* Faz a imagem ficar perfeitamente redonda */
+            border: 2px solid #333;
+            object-fit: cover;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Botão de UX (Só aparece se perder a tela cheia) -->
     <button id="rescue-btn">RESTAURAR TELA CHEIA</button>
 
     <div id="game-container"></div>
+    
     <div id="tap-screen">
         <h2>HARDWARE RECONHECIDO</h2>
         <div class="pulse">Toque para iniciar calibração</div>
+        
+        <!-- --- NOVO: Elemento do Selo na Tela --- -->
+        <div class="creator-badge">
+            <!-- Atenção: Se salvar a foto com outra extensão (ex: .jpg), mude o src abaixo -->
+            <img src="avatar.png" alt="Andre Meli">
+            <span>Created by Andre Meli</span>
+        </div>
     </div>
 
     <script>
@@ -55,7 +79,6 @@
         const tapScreen = document.getElementById('tap-screen');
         const rescueBtn = document.getElementById('rescue-btn');
 
-        // Função universal para forçar tela cheia
         function goFullscreen() {
             const elem = document.documentElement;
             if (elem.requestFullscreen) { elem.requestFullscreen(); }
@@ -63,10 +86,8 @@
             else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
         }
 
-        // Listener que monitora a queda da Tela Cheia
         function monitorFullscreen() {
             const isFull = document.fullscreenElement || document.webkitFullscreenElement;
-            // Se não estiver em tela cheia (o usuário puxou a barra) E a tela de tap já sumiu, exibe o botão
             if (!isFull && tapScreen.style.display === 'none') {
                 rescueBtn.style.display = 'block';
             } else {
@@ -74,11 +95,9 @@
             }
         }
 
-        // Atrela o monitoramento aos eventos nativos dos navegadores
         document.addEventListener('fullscreenchange', monitorFullscreen);
-        document.addEventListener('webkitfullscreenchange', monitorFullscreen); // Para iOS
+        document.addEventListener('webkitfullscreenchange', monitorFullscreen); 
 
-        // Ação do Botão de Resgate
         rescueBtn.addEventListener('click', goFullscreen);
 
         if (!gameId || !gameLibrary[gameId]) {
