@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NFC Cloud Console</title>
+    <style>
+        /* Fundo preto e removemos barras de rolagem para imitar um app */
+        body, html { margin: 0; padding: 0; width: 100vw; height: 100vh; background-color: #000; overflow: hidden; }
+        #game-container { width: 100%; height: 100%; }
+        #error-msg { color: #ff4444; font-family: monospace; padding: 20px; text-align: center; margin-top: 50px; }
+    </style>
+</head>
+<body>
+
+    <div id="game-container"></div>
+
+    <script>
+        // 1. Dicionário de jogos: Mapeia o parâmetro da URL para o core e a ROM física no seu GitHub
+        const gameLibrary = {
+            'mario': { core: 'snes', rom: 'roms/smw.smc', name: 'Super Mario World' },
+            'sonic': { core: 'segaMD', rom: 'roms/sonic.md', name: 'Sonic The Hedgehog' }
+        };
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const gameId = urlParams.get('game');
+
+        if (!gameId || !gameLibrary[gameId]) {
+            document.getElementById('game-container').innerHTML = '<div id="error-msg">Erro: ROM não encontrada ou Tag NFC inválida.</div>';
+        } else {
+            const config = gameLibrary[gameId];
+
+            // 2. Configurações obrigatórias do EmulatorJS
+            window.EJS_player = '#game-container';
+            window.EJS_core = config.core;
+            window.EJS_gameName = config.name;
+            window.EJS_color = '#e52521'; // Cor de destaque do emulador (vermelho Nintendo, só de enfeite)
+            window.EJS_startOnLoaded = true; // Força o boot automático
+            window.EJS_pathtodata = 'https://cdn.jsdelivr.net/gh/ethanaobrien/emulatorjs@main/data/'; // Puxa o motor da CDN deles
+            window.EJS_gameUrl = config.rom; // Caminho da SUA rom hospedada no seu repositório
+
+            // 3. Injeta o script pesado deles só depois de configurar as variáveis
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/gh/ethanaobrien/emulatorjs@main/data/loader.js';
+            document.body.appendChild(script);
+        }
+    </script>
+</body>
+</html>
