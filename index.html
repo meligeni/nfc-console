@@ -2,25 +2,15 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <!-- Meta tags extremas para forçar comportamento de app e sumir com a barra -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>NFC Console</title>
+    <title>NFC Console Pro</title>
     <style>
-        body, html { 
-            margin: 0; padding: 0; width: 100vw; height: 100vh; 
-            background-color: #000; overflow: hidden; font-family: monospace; 
-            touch-action: none; /* Impede o scroll de zoar a tela */
-        }
+        body, html { margin: 0; padding: 0; width: 100vw; height: 100vh; background-color: #000; overflow: hidden; font-family: monospace; }
         
-        /* O macete: O container SEMPRE tem tamanho e sempre está renderizado, só fica no fundo */
-        #game-container { 
-            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; 
-        }
+        #game-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
         
-        /* A tela de toque fica por cima (z-index 9999) */
         #tap-screen { 
             position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -34,47 +24,52 @@
 </head>
 <body>
 
-    <!-- A camada do fundo (Jogo) -->
     <div id="game-container"></div>
-
-    <!-- A camada da frente (Gatilho) -->
     <div id="tap-screen">
         <h2>HARDWARE RECONHECIDO</h2>
-        <div class="pulse">Toque para dar boot no sistema</div>
+        <div class="pulse">Toque para iniciar calibração</div>
     </div>
 
     <script>
         const gameLibrary = {
             'mario': { core: 'snes', rom: 'roms/smw.smc', name: 'Super Mario World' },
-            'sonick': { core: 'segaMD', rom: 'roms/sonick.md', name: 'Sonic Knuckles' }
+            'sonicl': { core: 'segaMD', rom: 'roms/sonick.md', name: 'Sonic 3' }
         };
 
         const urlParams = new URLSearchParams(window.location.search);
         const gameId = urlParams.get('game');
-        
         const tapScreen = document.getElementById('tap-screen');
 
         if (!gameId || !gameLibrary[gameId]) {
-            tapScreen.innerHTML = '<div id="error-msg">Falha na leitura: ROM não mapeada ou tag corrompida.</div>';
+            tapScreen.innerHTML = '<div id="error-msg">Falha na leitura.</div>';
         } else {
             tapScreen.addEventListener('click', () => {
                 
-                // Apenas destrói a camada da frente. Zero alteração de layout no fundo.
+                // 1. Invoca a Tela Cheia Nativa na raiz do documento
+                const elem = document.documentElement;
+                if (elem.requestFullscreen) { elem.requestFullscreen(); }
+                else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); }
+                else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
+
+                // 2. Esconde o botão de toque
                 tapScreen.style.display = 'none';
 
-                // Dispara a injeção do emulador diretamente no container que já estava pronto
-                const config = gameLibrary[gameId];
-                window.EJS_player = '#game-container'; 
-                window.EJS_core = config.core;
-                window.EJS_gameName = config.name;
-                window.EJS_color = '#e52521'; 
-                window.EJS_startOnLoaded = true; 
-                window.EJS_pathtodata = 'https://cdn.jsdelivr.net/gh/ethanaobrien/emulatorjs@main/data/'; 
-                window.EJS_gameUrl = config.rom; 
+                // 3. A MÁGICA: Aguarda 500ms para o Android/iOS terminar de esticar a tela
+                setTimeout(() => {
+                    const config = gameLibrary[gameId];
+                    window.EJS_player = '#game-container'; 
+                    window.EJS_core = config.core;
+                    window.EJS_gameName = config.name;
+                    window.EJS_color = '#e52521'; 
+                    window.EJS_startOnLoaded = true; 
+                    window.EJS_pathtodata = 'https://cdn.jsdelivr.net/gh/ethanaobrien/emulatorjs@main/data/'; 
+                    window.EJS_gameUrl = config.rom; 
 
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/gh/ethanaobrien/emulatorjs@main/data/loader.js';
-                document.body.appendChild(script);
+                    // O emulador agora entra num ambiente com as dimensões finais corretas
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/gh/ethanaobrien/emulatorjs@main/data/loader.js';
+                    document.body.appendChild(script);
+                }, 500); 
             });
         }
     </script>
